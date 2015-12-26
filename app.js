@@ -14,8 +14,8 @@ var options = {
     'Accept': 'application/json'
   },
   auth: {
-    username: process.env.key,
-    password: process.env.password
+    username: process.env.KEY,
+    password: process.env.PASSWORD
   }
 };
 
@@ -41,7 +41,11 @@ app.post('/', function (req, res) {
   });
 });
 
-var server = app.listen(3000, function () {
+app.get('/', function (req, res) {
+  res.json({text: 'Hello Fieldbook'})
+});
+
+var server = app.listen((process.env.PORT || 3000), function () {
   var host = server.address().address;
   var port = server.address().port;
 
