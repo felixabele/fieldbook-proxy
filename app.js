@@ -1,8 +1,12 @@
 // In Dev-mode start app with nodemon app.js
+// read my logs: heroku logs --app fieldbook-proxy
 
 var requestify  = require('requestify');
 var express     = require('express');
-var bodyParser  = require('body-parser')
+var bodyParser  = require('body-parser');
+var env         = require('node-env-file');
+
+env(__dirname + '/.env');
 
 var app = express();
 
@@ -31,23 +35,38 @@ app.use(function (req, res, next) {
   next();
 });
 
+function about_me() {
+  var host = server.address().address;
+  var port = server.address().port;
+  return('App listening at http://'+ host +':'+ port)
+}
 
 // --- Create guest
 app.post('/', function (req, res) {
-  requestify.post(baseUrl, req.body, options).then(function(response) {
-    res.json(response.getBody())
-  }).fail(function(error) {
-    res.status(500).json(error.getBody())
+
+  // check for unique email
+  requestify.get((baseUrl +'?email='+ req.body.email), options).then(function(response) {
+
+    // create new Dataset
+    if (response.getBody().length == 0) {
+      requestify.post(baseUrl, req.body, options).then(function(response) {
+        res.json(response.getBody())
+      }).fail(function(error) {
+        res.status(500).json(error.getBody())
+      });
+
+    } else {
+      res.json({ error: 'duplicate' })
+    }
+
   });
 });
 
 app.get('/', function (req, res) {
-  res.json({text: 'Hello Fieldbook'})
+  guest_exists('perle@hoorzi.de')
+  res.send(about_me());
 });
 
 var server = app.listen((process.env.PORT || 3000), function () {
-  var host = server.address().address;
-  var port = server.address().port;
-
-  console.log('App listening at http://%s:%s', host, port);
+  console.log(about_me());
 });
