@@ -6,7 +6,7 @@ var express     = require('express');
 var bodyParser  = require('body-parser');
 var env         = require('node-env-file');
 
-env(__dirname + '/.env');
+env(__dirname + '/.env', {raise: false});
 
 var app = express();
 
