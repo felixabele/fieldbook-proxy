@@ -28,9 +28,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(function (req, res, next) {
 
-  // TODO: make a domain whitelist
-  if (req.headers.origin) {
+  if (req.headers.origin.match(/localhost|franziundfelix/)) {
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+  } else {
+    res.status(500).json({error: 'not allowed'})
   }
   next();
 });
@@ -47,23 +48,47 @@ app.post('/', function (req, res) {
   // check for unique email
   requestify.get((baseUrl +'?email='+ req.body.email), options).then(function(response) {
 
+    existing_ds = response.getBody();
+
     // create new Dataset
-    if (response.getBody().length == 0) {
+    if (existing_ds.length == 0) {
       requestify.post(baseUrl, req.body, options).then(function(response) {
-        res.json(response.getBody())
+        res.json({
+          action: 'new',
+          data: response.getBody()
+        })
       }).fail(function(error) {
-        res.status(500).json(error.getBody())
+        res.status(500).json({
+          action: 'new',
+          data: error.getBody()
+        })
       });
 
+    // update Dataset
     } else {
-      res.json({ error: 'duplicate' })
+      options.method = 'PATCH';
+      options.body = req.body;
+      requestify.request((baseUrl +'/'+ existing_ds[0].id), options).then(function(response) {
+        console.log('updated', response.getBody())
+        res.json({
+          action: 'update',
+          data: response.getBody()
+        })
+      }).fail(function(error) {
+        console.log('error', error.getBody())
+        res.status(500).json({
+          action: 'update',
+          data: error.getBody()
+        })
+      });
+
+      //res.json({ error: 'duplicate', duplicate: existing_ds[0] })
     }
 
   });
 });
 
 app.get('/', function (req, res) {
-  guest_exists('perle@hoorzi.de')
   res.send(about_me());
 });
 
